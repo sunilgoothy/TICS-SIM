@@ -1,7 +1,11 @@
-import ast, redis, sys, csv, json, time, os
+import ast, redis, sys, csv, json, time, os, threading
 from TICSEvents import *
 from TICSUtil import *
 
+
+def call_event(_Events, func_name, *args):
+    call = getattr(_Events, func_name)
+    call(*args)
 class TICSEvtMgr:
 
     def __init__(self, filename='tics_events.csv'):
@@ -37,8 +41,7 @@ class TICSEvtMgr:
                             if tag_evt_type == self.evt_type[value]:
                                 valid_evt = True
                             if tag_evt_type == 'pu_do':
-                                valid_evt = True
-                                
+                                valid_evt = True  
                             if (valid_evt):
                                 self.event_dispatcher(tag, args)
                             
@@ -55,8 +58,10 @@ class TICSEvtMgr:
     def event_dispatcher(self, tag, *args):
         """Dispatch the change detect event to appropriate event assigned to it"""
         func_name = self.events[tag]['event_name']
-        call = getattr(self.Events, func_name)
-        call(*args)
+        _Events = self.Events
+        t = threading.Thread(target=call_event, args=(_Events, func_name, *args))
+        t.daemon = True
+        t.start()
 
     def read_events_config(self, filename):
         """Read Events Config File and register events"""

@@ -1,5 +1,5 @@
 from datetime import datetime
-import configparser, csv
+import configparser, csv, os
 
 def log_time():
     """ Returns date time with ms. Can be used for logging messages"""
@@ -34,8 +34,29 @@ def csvToDic(filename):
 
                     tag_dict[row[_key[0]]]=_temp
                 line_count += 1
-            print(f'<INFO> csvToDic Processed {line_count} lines from {filename}.')
+            #print(f'<INFO> csvToDic Processed {line_count} lines from {filename}.')
 
     except Exception as e:
         print(e)
     return tag_dict
+
+def eventDataTag(eventname):
+    filename = 'tics_events_data.csv'
+    _list = list()
+    try:
+        root = ".\SIM"
+        filename = os.path.join(root,filename)
+        with open(filename) as tags_file:
+            csv_reader = csv.DictReader(tags_file, delimiter=',')
+            line_count = 0
+            for row in csv_reader:
+                _key = list(row.keys())
+                if eventname in _key:
+                    if row[eventname] != '':
+                        _list.append(row[eventname])
+                line_count += 1
+            #print(f'<INFO> eventDataTag Processed {line_count} lines from {filename}.')
+    except Exception as e:
+        print(e)
+
+    return _list

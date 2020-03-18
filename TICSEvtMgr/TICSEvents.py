@@ -10,22 +10,27 @@ _dict_time = dict()
 rclient = redis.StrictRedis(host='localhost', port=6379, db=0, decode_responses = True)
 
 def write_pdi(pieceID):
-    print(pieceID)
+    print('pieceID: {}'.format(pieceID))
     _pdiData = session.query(PDI).filter_by(c_SlabID=pieceID).limit(1).all()
-    for record in _pdiData:
-        print('pdi: {}'.format(record))
-        _pdidata_dict = record.__dict__
-    _pdiTag = csvToDic('pdi_config.csv')
-    for record in _pdiTag:
-        _data = float(_pdidata_dict[record])
-        print('writing tag {0} with value {1}'.format( _pdiTag[record],_data))
-        rclient.hset('tagwrite', _pdiTag[record], _data)
 
-def get_pdo():
+    if _pdiData != []:
+        for record in _pdiData:
+            print('pdi: {}'.format(record))
+            _pdidata_dict = record.__dict__
+        _pdiTag = csvToDic('pdi_config.csv')
+    else:
+        print('pdi not exits for pieceID:'.format(pieceID))
+        
+        for record in _pdiTag:
+            _data = float(_pdidata_dict[record])
+            print('writing tag {0} with value {1}'.format( _pdiTag[record],_data))
+            rclient.hset('tagwrite', _pdiTag[record], _data)
+
+def get_pdo(pieceID):
     return 0
 
 def getPieceID():
-    tag_pieceID = 'ns=2;s=SimChannel.Device.Integer.C_i_Tag1'
+    tag_pieceID = 'ns=2;s=SimChannel.Device.Integer.L_i_Tag1'
     _pieceID = rclient.hget('tagread', tag_pieceID)
     return _pieceID
 
@@ -42,8 +47,6 @@ class TICSEvents():
         # t.daemon = True
         # t.start()
         write_pdi(getPieceID())
-
-
 
     def evt_slab_discharged(self, *args):
         print(log_time(), f'<INFO> evt_slab_discharged')

@@ -1,0 +1,17 @@
+tag_addr,event_name,update_source,lo_limit,hi_limit,offset
+ns=2;s=SimChannel.Device.Float.L_f_Tag1,evt_extract_req,,,,
+ns=2;s=SimChannel.Device.Float.L_f_Tag2,evt_slab_discharged,,,,
+ns=2;s=SimChannel.Device.Float.L_f_Tag3,evt_rmet_pu_do,f_RMDelTempTarg,0.8,1.2,-10
+ns=2;s=SimChannel.Device.Float.L_f_Tag4,evt_rm_pu_do,f_RMDelThkTarg,0.8,1.2,0
+ns=2;s=SimChannel.Device.Float.L_f_Tag5,evt_rmdt_pu_do,f_RMDelTempTarg,0.8,1.2,0
+ns=2;s=SimChannel.Device.Float.L_f_Tag6,evt_fet_pu_do,f_FMEntTempTarg,0.8,1.2,0
+ns=2;s=SimChannel.Device.Float.L_f_Tag7,evt_fmd_pu_do,f_FMDelThkTarg,0.95,1.05,0
+ns=2;s=SimChannel.Device.Float.L_f_Tag8,evt_fdt_pu_do,f_FMDelTempTarg,0.85,1.15,0
+ns=2;s=SimChannel.Device.Float.L_f_Tag9,evt_ct_pu_do,f_CoilTempTarg,0.85,1.15,0
+ns=2;s=SimChannel.Device.Float.L_f_Tag10,evt_dc_pu_do,,,,
+ns=2;s=SimChannel.Device.Float.L_f_Tag11,evt_coil_complete,,,,
+ns=2;s=SimChannel.Device.Float.L_f_Tag12,evt_coil_weigh,f_SlabWt,0.9,0.95,0
+ns=2;s=SimChannel.Device.Float.L_f_Tag13,evt_rm_pu_do,f_RMDelWidCold,0.95,1.05,0
+ns=2;s=SimChannel.Device.Float.L_f_Tag14,evt_fmd_pu_do,f_FlatTarg,0.85,1.15,0
+ns=2;s=SimChannel.Device.Float.L_f_Tag15,evt_fmd_pu_do,f_ProfTarg,0.85,1.15,0
+ns=2;s=SimChannel.Device.Float.L_f_Tag16,evt_fmd_pu_do,f_FMDelWidTarg,0.85,1.15,0

@@ -1,6 +1,8 @@
 from TICSUtil import *
+from TICSSimu import *
 import random, redis, inspect, time, threading
-
+from threading import Thread
+from models import PDI, PDO, session
 
 def clearAll(_simConfig, rclient):
     for record in _simConfig:
@@ -8,24 +10,52 @@ def clearAll(_simConfig, rclient):
         rclient.hset('tagwrite', _simConfig[record]['tag_pieceID'], 0)
     print(log_time(), f'<INFO> Signals cleared')
 
+def getPDI(_pieceID):
+    #print(_pieceID)
+    _pdiData = session.query(PDI).filter_by(c_SlabID=_pieceID).limit(1).all()
+    _pdidata_dict = {}
+    if _pdiData != []:
+        for record in _pdiData:
+            #print('pdi: {}'.format(record))
+            _pdidata_dict = record.__dict__
+    return _pdidata_dict
 
 def reset(arg, _func, _simConfig, _pieceID, rclient):
     if arg:
+        pulse_dur = float(_simConfig[_func]['pulse_dur'])
+        #simulate
+        _signalList = eventDataTag(_func)
+        if len(_signalList)>0:
+            for _signal in _signalList:
+                _pdi = getPDI(_pieceID)
+                sim = TICSSimu(_pieceID, rclient, _func, _pdi, _signal)
+                t = Thread(target = sim.simulate, args =(pulse_dur, )) 
+                t.start()
         #delay
-        time.sleep(float(_simConfig[_func]['pulse_dur']))
+        time.sleep(pulse_dur)
 
         # reset current
         rclient.hset('tagwrite', _simConfig[_func]['tag_addr'], 0)
-        rclient.hset('tagwrite', _simConfig[_func]['tag_pieceID'], 0)
+        #rclient.hset('tagwrite', _simConfig[_func]['tag_pieceID'], 0)
 
 def setnext(arg, _func, _simConfig, _pieceID, rclient):
-    if arg:
+    if arg and _func != 'evt_coil_weigh':
         #delay
         time.sleep(float(_simConfig[_func]['event_gap']))
 
         #set next
-        rclient.hset('tagwrite', _simConfig[_func]['tag_addr_nxt'], 1)
         rclient.hset('tagwrite', _simConfig[_func]['tag_pieceID_next'], _pieceID)
+        rclient.hset('tagwrite', _simConfig[_func]['tag_addr_nxt'], 1)
+
+def millPacing(_simConfig, rclient):
+    _pieceID = 0
+    while True:
+        _pieceID+=1
+        _func = 'evt_extract_req'
+        print(log_time(), f'<INFO> new extract request for pieceID: ', str(_pieceID))
+        rclient.hset('tagwrite', _simConfig[_func]['tag_pieceID'], _pieceID)
+        rclient.hset('tagwrite', _simConfig[_func]['tag_addr'], 1)
+        time.sleep(160)
 
 class TICSEvents:
 
@@ -40,15 +70,16 @@ class TICSEvents:
         
     def initialize(self, *args):
         print(log_time(), f'<INFO> initialize')
-        self.rclient.hset('tagwrite', self._simConfig['evt_extract_req']['tag_addr'], 1)
+        t = threading.Thread(target=millPacing, args = (self._simConfig, self.rclient))
+        t.daemon = True
+        t.start()
 
     def evt_extract_req(self, *args):
         self._pieceID+=1
         print(log_time(), f'<INFO> piece ID: {self._pieceID}')
         _func = inspect.stack()[0][3]
-        print(log_time(), f'<INFO> {_func}')
         for arg in args:
-            # print(f'arg: {arg}')
+            print(log_time(), f'<INFO> {_func} {self.evt_type[arg]}')
             t1 = threading.Thread(target=reset, args = (arg, _func, self._simConfig, self._pieceID, self.rclient))
             t1.daemon = True
             t1.start()
@@ -58,9 +89,8 @@ class TICSEvents:
 
     def evt_slab_discharged(self, *args):
         _func = inspect.stack()[0][3]
-        print(log_time(), f'<INFO> {_func}')
         for arg in args:
-            # print(f'arg: {arg}')
+            print(log_time(), f'<INFO> {_func} {self.evt_type[arg]}')
             t1 = threading.Thread(target=reset, args = (arg, _func, self._simConfig, self._pieceID, self.rclient))
             t1.daemon = True
             t1.start()
