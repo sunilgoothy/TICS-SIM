@@ -57,7 +57,6 @@ class TICSEvtMgr:
         func_name = self.events[tag]['event_name']
         call = getattr(self.Events, func_name)
         call(*args)
-        print("test")
        
 
     def read_events_config(self, filename):
