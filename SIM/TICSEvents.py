@@ -28,8 +28,8 @@ def reset(arg, _func, _simConfig, _pieceID, rclient):
         if len(_signalList)>0:
             for _signal in _signalList:
                 _pdi = getPDI(_pieceID)
-                sim = TICSSimu(_pieceID, rclient, _func, _pdi, _signal)
-                t = Thread(target = sim.simulate, args =(pulse_dur, )) 
+                sim = TICSSimu(_pieceID, rclient, _func, _pdi)
+                t = Thread(target = sim.simulate, args =(pulse_dur, _signal)) 
                 t.start()
         #delay
         time.sleep(pulse_dur)
@@ -56,7 +56,6 @@ def millPacing(_simConfig, rclient):
         rclient.hset('tagwrite', _simConfig[_func]['tag_pieceID'], _pieceID)
         rclient.hset('tagwrite', _simConfig[_func]['tag_addr'], 1)
         time.sleep(160)
-
 class TICSEvents:
 
     def __init__(self):
@@ -64,10 +63,22 @@ class TICSEvents:
         self._pieceID = 0
         self.evt_type = {0:'DROP', 1:'PICKUP'}
         self._simConfig = csvToDic('tics_sim_config.csv')
+        self._simSpeedConfig = csvToDic('tics_speed_sim.csv')
         self.rclient = redis.StrictRedis(host='localhost', port=6379, db=0, decode_responses = True)
         clearAll(self._simConfig, self.rclient)
+        self.rclient.hset('tagwrite', 'ns=2;s=SimChannel.Device.Float.L_f_Tag1', float('0.5'))
         self.init = True
-        
+
+
+    def sim_speed(self, _func, _type):
+        _config = self._simSpeedConfig[_func]
+        _type = self.evt_type[_type]
+        pulse_dur = float(self._simConfig[_func]['pulse_dur'])
+        _pdi = getPDI(self._pieceID)
+        sim = TICSSimu(self._pieceID, self.rclient, _func, _pdi)
+        t = Thread(target = sim.speedSim, args =(pulse_dur, _type, _config)) 
+        t.start()
+
     def initialize(self, *args):
         print(log_time(), f'<INFO> initialize')
         t = threading.Thread(target=millPacing, args = (self._simConfig, self.rclient))
@@ -76,6 +87,8 @@ class TICSEvents:
 
     def evt_extract_req(self, *args):
         self._pieceID+=1
+        if self._pieceID > 50:
+            self._pieceID = 1
         print(log_time(), f'<INFO> piece ID: {self._pieceID}')
         _func = inspect.stack()[0][3]
         for arg in args:
@@ -132,7 +145,7 @@ class TICSEvents:
             _func = inspect.stack()[0][3]
 
             for arg in args:
-                # print(f'arg: {arg}')
+                self.sim_speed(_func, arg)
                 print(log_time(), f'<INFO> {_func} {self.evt_type[arg]}')
                 t1 = threading.Thread(target=reset, args = (arg, _func, self._simConfig, self._pieceID, self.rclient))
                 t1.daemon = True
@@ -146,6 +159,7 @@ class TICSEvents:
             _func = inspect.stack()[0][3]
 
             for arg in args:
+                self.sim_speed(_func, arg)
                 # print(f'arg: {arg}')
                 print(log_time(), f'<INFO> {_func} {self.evt_type[arg]}')
                 t1 = threading.Thread(target=reset, args = (arg, _func, self._simConfig, self._pieceID, self.rclient))
@@ -160,7 +174,7 @@ class TICSEvents:
             _func = inspect.stack()[0][3]
 
             for arg in args:
-                # print(f'arg: {arg}')
+                self.sim_speed(_func, arg)
                 print(log_time(), f'<INFO> {_func} {self.evt_type[arg]}')
                 t1 = threading.Thread(target=reset, args = (arg, _func, self._simConfig, self._pieceID, self.rclient))
                 t1.daemon = True
@@ -174,7 +188,7 @@ class TICSEvents:
             _func = inspect.stack()[0][3]
 
             for arg in args:
-                # print(f'arg: {arg}')
+                self.sim_speed(_func, arg)
                 print(log_time(), f'<INFO> {_func} {self.evt_type[arg]}')
                 t1 = threading.Thread(target=reset, args = (arg, _func, self._simConfig, self._pieceID, self.rclient))
                 t1.daemon = True
@@ -188,7 +202,7 @@ class TICSEvents:
             _func = inspect.stack()[0][3]
 
             for arg in args:
-                # print(f'arg: {arg}')
+                self.sim_speed(_func, arg)
                 print(log_time(), f'<INFO> {_func} {self.evt_type[arg]}')
                 t1 = threading.Thread(target=reset, args = (arg, _func, self._simConfig, self._pieceID, self.rclient))
                 t1.daemon = True
@@ -202,7 +216,7 @@ class TICSEvents:
             _func = inspect.stack()[0][3]
 
             for arg in args:
-                # print(f'arg: {arg}')
+                self.sim_speed(_func, arg)
                 print(log_time(), f'<INFO> {_func} {self.evt_type[arg]}')
                 t1 = threading.Thread(target=reset, args = (arg, _func, self._simConfig, self._pieceID, self.rclient))
                 t1.daemon = True

@@ -1,0 +1,7 @@
+event_name,PICKUP,DROP,max_speed,min_speed
+evt_rmdt_pu_do,1.001,0.995,6,4
+evt_fet_pu_do,1,0.995,6,4
+evt_fmd_pu_do,1.001,0.995,8,4
+evt_fdt_pu_do,1.001,0.995,6,4
+evt_ct_pu_do,1.001,0.995,6,4
+evt_dc_pu_do,1.004,0.995,6,4

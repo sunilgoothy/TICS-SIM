@@ -1,3 +1,5 @@
 evt_extract_req,evt_slab_discharged,evt_rmet_pu_do,evt_rm_pu_do,evt_rmdt_pu_do,evt_fet_pu_do,evt_fmd_pu_do,evt_fdt_pu_do,evt_ct_pu_do,evt_dc_pu_do,evt_coil_complete,evt_coil_weigh
 ns=2;s=SimChannel.Device.Float.L_f_Tag1,ns=2;s=SimChannel.Device.Float.L_f_Tag2,ns=2;s=SimChannel.Device.Float.L_f_Tag3,ns=2;s=SimChannel.Device.Float.L_f_Tag4,ns=2;s=SimChannel.Device.Float.L_f_Tag5,ns=2;s=SimChannel.Device.Float.L_f_Tag6,ns=2;s=SimChannel.Device.Float.L_f_Tag7,ns=2;s=SimChannel.Device.Float.L_f_Tag8,ns=2;s=SimChannel.Device.Float.L_f_Tag9,ns=2;s=SimChannel.Device.Float.L_f_Tag10,ns=2;s=SimChannel.Device.Float.L_f_Tag11,ns=2;s=SimChannel.Device.Float.L_f_Tag12
-,,ns=2;s=SimChannel.Device.Float.L_f_Tag13,,,,,,,,,
+,,,ns=2;s=SimChannel.Device.Float.L_f_Tag13,,,ns=2;s=SimChannel.Device.Float.L_f_Tag14,,,,,
+,,,,,,ns=2;s=SimChannel.Device.Float.L_f_Tag15,,,,,
+,,,,,,ns=2;s=SimChannel.Device.Float.L_f_Tag16,,,,,
