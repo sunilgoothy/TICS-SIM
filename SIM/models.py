@@ -18,9 +18,9 @@ session = Session()
 class PDI(Base):
     __table__ = Table('r_PDI', metadata, autoload=True)
     def __repr__(self):
-        return '<PDI %r>' % self.cid   
+        return '<PDI %r>' % self.c_SlabID   
 
 class PDO(Base):
     __table__ = Table('r_PDO', metadata, autoload=True)
     def __repr__(self):
-        return '<PDI %r>' % self.cid 
+        return '<PDO %r>' % self.cid 
