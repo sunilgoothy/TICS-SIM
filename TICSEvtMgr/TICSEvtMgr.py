@@ -2,6 +2,7 @@ import ast, redis, sys, csv, json, time, os, threading
 from TICSEvents import *
 from TICSUtil import *
 
+    
 class TICSEvtMgr:
 
     def __init__(self, filename='tics_events.csv'):
@@ -40,8 +41,9 @@ class TICSEvtMgr:
                                 valid_evt = True
                                 
                             if (valid_evt):
-                                self.event_dispatcher(tag, args)
-
+                                t = threading.Thread(target=self.event_dispatcher, args=(tag, args))
+                                t.daemon = True
+                                t.start()
                         else:
                             pass
                 except Exception as e:
