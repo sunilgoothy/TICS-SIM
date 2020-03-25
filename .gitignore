@@ -115,6 +115,10 @@ venv.bak/
 
 # data
 data
+TICSLogger
+data.json
+database.db
+Test.py
 
 # Spyder project settings
 .spyderproject
