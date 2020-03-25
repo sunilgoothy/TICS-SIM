@@ -126,8 +126,17 @@ class TICSEvtMgrFunc:
             self.rclient.hset('tagwrite', _pdivalidTag, 0)
             print(log_time(), f'<ERR> PDI does not exist for pieceID {str(pieceID)}')
 
-    def get_pdo(self, pieceID):
+    def get_pdo(self, pieceID, _func):
         print(log_time(), f'<INFO> get_pdo for pieceID: {str(pieceID)}')
+        if _func == 'evt_reject':
+            b_RejectFlag = 1
+        else:
+            b_RejectFlag = 0
+
+        if _func == 'evt_cobble':
+            b_CobbleFlag = 1
+        else:
+            b_CobbleFlag = 0           
 
         _pieceData = self._Datadict[pieceID]
         _pdoData = {}
@@ -185,10 +194,14 @@ class TICSEvtMgrFunc:
                 f_FMEntTempAve =  _pdoData['f_FMEntTempAve'] , \
                 f_FMDelTempAve =  _pdoData['f_FMDelTempAve'] , \
                 f_DCTempAve =  _pdoData['f_DCTempAve'], \
-                f_PieceWeightCalc = f_PieceWeightCalc
+                f_PieceWeightCalc = f_PieceWeightCalc , \
+                b_RejectFlag = b_RejectFlag ,\
+                b_CobbleFlag = b_CobbleFlag
         )
         session.add(newPDO)
         session.commit()
+        with open('data.json' , 'w') as fp:
+            json.dump(self._Datadict, fp)
 
     def update_weight(self, pieceID):
         print(log_time(), f'<INFO> update_weight')
@@ -200,6 +213,28 @@ class TICSEvtMgrFunc:
         tag_pieceID = 'ns=2;s=SimChannel.Device.Integer.L_i_Tag1'
         _pieceID = self.rclient.hget('tagread', tag_pieceID)
         return _pieceID
+
+    def clear_dict(self):
+        try:
+            while True:
+                _dict_count = 0
+                for _key in self._Datadict:
+                    _temp_dt = datetime.strptime(self._Datadict[_key]['start_time'], '%Y-%m-%d %H:%M:%S.%f')
+                    if _dict_count == 0:
+                        _oldest_key = _key
+                        _oldest_dt = _temp_dt
+                    else:
+                        if _oldest_dt > _temp_dt:
+                            _oldest_key = _key
+                            _oldest_dt = _temp_dt
+                    _dict_count+=1
+                if _dict_count > 2:
+                    print(log_time(), f'<INFO> Clearing Dictionary having key: {_dict_count} deleting pieceID: {_oldest_key}')
+                    self._Datadict.pop(_oldest_key, None)
+                    break
+            #print(log_time(), f'<INFO> Clear piece data dictionary')
+        except Exception as e:
+            print(e)
 
     def update_dict(self,_pieceID, _tag, _func):
         if _func=='evt_extract_req':
@@ -222,7 +257,28 @@ class TICSEvtMgrFunc:
             filename = os.path.join(root,'piecedata_'+str(_pieceID)+'.json')
             with open(filename , 'w') as fp:
                 json.dump(self._Datadict[_pieceID], fp)
+    
+    def get_current_shift(self, _time):
+        i_ShiftIndex = 0
 
+        for record in self._shiftConfig:
+            if _time.hour >= int(self._shiftConfig[record]['shift_start_hr']) and \
+                _time.hour < int(self._shiftConfig[record]['shift_end_hr']):
+
+                c_ShiftName = self._shiftConfig['shift_name']
+                i_ShiftIndex = int(record)
+            elif _time.hour >= int(self._shiftConfig[record]['shift_start_hr']) and \
+                int(self._shiftConfig[record]['shift_start_hr']) > int(self._shiftConfig[record]['shift_end_hr']):
+
+                c_ShiftName = self._shiftConfig['shift_name']
+                i_ShiftIndex = int(record)
+
+            elif _time.hour < int(self._shiftConfig[record]['shift_end_hr']) and \
+                int(self._shiftConfig[record]['shift_start_hr']) > int(self._shiftConfig[record]['shift_end_hr']):
+
+                c_ShiftName = self._shiftConfig['shift_name']
+                i_ShiftIndex = int(record)
+        return {'i_ShiftIndex':i_ShiftIndex , 'c_ShiftName':c_ShiftName}
 
 class ShiftUpdate:
     def __init__(self):
