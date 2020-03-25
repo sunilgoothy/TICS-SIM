@@ -11,3 +11,5 @@ L_b_Tag9,ns=2;s=SimChannel.Device1.L_b_Tag9,evt_ct_pu_do,pu_do,test
 L_b_Tag10,ns=2;s=SimChannel.Device1.L_b_Tag10,evt_dc_pu_do,pu_do,test
 L_b_Tag11,ns=2;s=SimChannel.Device1.L_b_Tag11,evt_coil_complete,pu,test
 L_b_Tag12,ns=2;s=SimChannel.Device1.L_b_Tag12,evt_coil_weigh,pu,test
+L_b_Tag13,ns=2;s=SimChannel.Device1.L_b_Tag13,evt_reject,pu,test
+L_b_Tag14,ns=2;s=SimChannel.Device1.L_b_Tag14,evt_cobble,pu,test
