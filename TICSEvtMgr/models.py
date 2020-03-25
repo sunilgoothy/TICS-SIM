@@ -29,4 +29,9 @@ class PDO(Base):
 class r_Shift_Record(Base):
     __table__ = Table('r_Shift_Record', metadata, autoload=True)
     def __repr__(self):
-        return '<r_Shift_Record %r>' % self.i_ShiftIndex 
+        return '<r_Shift_Record %r>' % self.i_ShiftIndex
+
+class r_Delay_Record(Base):
+    __table__ = Table('r_Delay_Record', metadata, autoload=True)
+    def __repr__(self):
+        return '<r_Delay_Record %r>' % self.i_DelayIndex 
