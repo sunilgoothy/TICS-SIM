@@ -25,10 +25,11 @@ class TICSEvents():
         _pieceID = self.evt_Func.getPieceID(_func)
         for arg in args:
             print(log_time(), f'<INFO> {_func} {self.evt_type[arg]}')
-        self.evt_Func.write_pdi(_pieceID)
-        t = threading.Thread(target=self.evt_Func.update_dict, args = (_pieceID, '', _func))
-        t.daemon = True
-        t.start()
+            if arg:
+                self.evt_Func.write_pdi(_pieceID)
+                t = threading.Thread(target=self.evt_Func.update_dict, args = (_pieceID, '', _func))
+                t.daemon = True
+                t.start()
 
     def evt_slab_discharged(self, *args):
         _func = inspect.stack()[0][3]
@@ -162,7 +163,7 @@ class TICSEvents():
             if arg:
                 if len(eventDataTag(_func))>0:
                     for _tag in eventDataTag(_func):
-                        print("start evt_coil_weigh update")
+                        #print("start evt_coil_weigh update")
                         t = threading.Thread(target=self.evt_Func.update_dict, args = (_pieceID, _tag, _func))
                         t.daemon = True
                         t.start()

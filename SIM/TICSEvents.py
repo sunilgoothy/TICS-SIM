@@ -146,12 +146,12 @@ class TICSEvents:
                 print(log_time(), f'<INFO> {_func} {self.evt_type[arg]}')
                 if arg:
                     if random. randint(1,5) == 5:
-                        print('piece Rejected')
+                        print(log_time(), f'<INFO> Piece Rejected')
                         t = threading.Thread(target=reject, args = (arg, _func, self._simConfig, self._pieceID, self.rclient))
                         t.daemon = True
                         t.start()
                     else:
-                        print('piece Not Rejected')
+                        print(log_time(), f'<INFO> Piece Not Rejected')
                         t1 = threading.Thread(target=reset, args = (arg, _func, self._simConfig, self._pieceID, self.rclient))
                         t1.daemon = True
                         t1.start()

@@ -84,18 +84,20 @@ def csvToDic2(filename):
             #print(f'<INFO> csvToDic Processed {line_count} lines from {filename}.')
 
     except Exception as e:
-        print(e)
+        print(log_time(), f'<ERR> Not able to data from csv, msg: {e}')
     return tag_dict
 
 class TICSEvtMgrFunc:
     def __init__(self):
         self._Datadict = dict()
-        self._dict_time = dict()
-        self.rclient = redis.StrictRedis(host='localhost', port=6379, db=0, decode_responses = True)
-        self._pdiTag = csvToDic('pdi_config.csv')
-        self._pdoTag = csvToDic('pdo_config.csv')
-        self._shiftConfig = csvToDic2('shift_config.csv')
-
+        #self._dict_time = dict()
+        try:
+            self.rclient = redis.StrictRedis(host='localhost', port=6379, db=0, decode_responses = True)
+            self._pdiTag = csvToDic('pdi_config.csv')
+            self._pdoTag = csvToDic('pdo_config.csv')
+            self._shiftConfig = csvToDic2('shift_config.csv')
+        except Exception as e:
+            print(log_time(), f'<ERR> Error in TICSEvtMgrFunc initialization, msg: {e}')
     def get_pdi(self, pieceID):
         _pdidata_dict = {}
         _pdiData = session.query(PDI).filter_by(c_SlabID=pieceID).limit(1).all()
@@ -105,29 +107,43 @@ class TICSEvtMgrFunc:
                 #print('pdi: {}'.format(record))
                 _pdidata_dict = record.__dict__
         else:
-            print(f'pdi not exits for pieceID:{str(pieceID)}')
+            print(log_time(), f'<ERR> pdi not exits for pieceID:{str(pieceID)}')
         return _pdidata_dict
 
     def write_pdi(self, pieceID):
-        print('pieceID: {}'.format(pieceID))
+        #print('pieceID: {}'.format(pieceID))
         _pdidata_dict = self.get_pdi(pieceID)
-        _pdivalidTag = 'ns=2;s=SimChannel.Device.Boolean.L_b_Tag1'
-
+        _pdivalidTag = 'ns=2;s=SimChannel.Device.Boolean.C_b_Tag1'
+        self.rclient.hset('tagwrite', _pdivalidTag, 1)
         if _pdidata_dict != {}:
             for record in self._pdiTag:
-                _data = float(_pdidata_dict[record])
-                #print('writing tag {0} with value {1}'.format( self._pdiTag[record],_data))
-                self.rclient.hset('tagwrite', self._pdiTag[record], _data)
-            self.rclient.hset('tagwrite', _pdivalidTag, 1)
+                try:
+                    _data = float(_pdidata_dict[record])
+                    self.rclient.hset('tagwrite', self._pdiTag[record], _data)
+                except Exception as e:
+                    print(log_time(), f'<ERR> Error in getting PDI data Piecename:{pieceID} for pdifield:{record}, error msg:{e}')
+                    self.rclient.hset('tagwrite', _pdivalidTag, 0)
             print(log_time(), f'<INFO> PDI received by L1 for pieceID {str(pieceID)}')
-            session.query(PDI).filter_by(c_SlabID=pieceID).update({'c_SlabLoc': 'EXT'})
-            session.commit()
+            try:
+                session.query(PDI).filter_by(c_SlabID=pieceID).update({'c_SlabLoc': 'EXT'})
+                session.commit()
+            except Exception as e:
+                print(log_time(), f'<ERR> Error in setting Piece location set in PDI, error msg: {e}')
+
         else:
             self.rclient.hset('tagwrite', _pdivalidTag, 0)
             print(log_time(), f'<ERR> PDI does not exist for pieceID {str(pieceID)}')
 
     def get_pdo(self, pieceID, _func):
         print(log_time(), f'<INFO> get_pdo for pieceID: {str(pieceID)}')
+
+        # create i_PieceIndex
+        i_PieceIndex = 1
+        _maxPieceIndex = session.query(PDO).order_by(desc(PDO.i_PieceIndex)).limit(1).all()
+        for record in _maxPieceIndex:
+            i_PieceIndex = record.__dict__['i_PieceIndex'] + 1 
+
+        # set reject/cobble flag
         if _func == 'evt_reject':
             b_RejectFlag = 1
         else:
@@ -136,27 +152,8 @@ class TICSEvtMgrFunc:
         if _func == 'evt_cobble':
             b_CobbleFlag = 1
         else:
-            b_CobbleFlag = 0           
+            b_CobbleFlag = 0
 
-        _pieceData = self._Datadict[pieceID]
-        _pdoData = {}
-        _pdiData = self.get_pdi(pieceID)
-        print(log_time(), f'<INFO> check signal data')
-        for _pdoField in self._pdoTag:
-            try:
-                _pdoData[_pdoField] = float(_pieceData[self._pdoTag[_pdoField]]['value'])
-            except Exception as e:
-                print(e)
-                _pdoData[_pdoField] = 0
-        try:
-            _pdoData['gt_PieceProductionTimeStart'] = datetime.strptime(_pieceData['start_time'], '%Y-%m-%d %H:%M:%S.%f')
-        except Exception as e:
-            print(e)
-            _pdoData['gt_PieceProductionTimeStart'] = datetime.now()
-        print(log_time(), f'<INFO> copy pdi data')
-        f_PieceWeightCalc = float(_pdiData['f_SlabWt']) * 0.98
-        gt_PieceProductionTime = datetime.now()
-        
         # get i_ShiftIndex
         i_ShiftIndex = 0
         for record in self._shiftConfig:
@@ -173,12 +170,32 @@ class TICSEvtMgrFunc:
                 int(self._shiftConfig[record]['shift_start_hr']) > int(self._shiftConfig[record]['shift_end_hr']):
 
                 i_ShiftIndex = int(record)
-
-        # create i_PieceIndex
-        i_PieceIndex = 1
-        _maxPieceIndex = session.query(PDO).order_by(desc(PDO.i_PieceIndex)).limit(1).all()
-        for record in _maxPieceIndex:
-            i_PieceIndex = record.__dict__['i_PieceIndex'] + 1 
+        
+        # get realtime data
+        if pieceID in self._Datadict:
+            _pieceData = self._Datadict[pieceID]
+        else:
+            print(log_time(), f'<ERR> No sensor data collected for PDO') 
+            _pieceData = {}
+        _pdoData = {}
+        _pdiData = self.get_pdi(pieceID)
+        print(log_time(), f'<INFO> check signal data')
+        for _pdoField in self._pdoTag:
+            try:
+                _pdoData[_pdoField] = float(_pieceData[self._pdoTag[_pdoField]]['value'])
+            except Exception as e:
+                print(log_time(), f'<ERR> Error in PDO field: {_pdoField},  msg: {e}')
+                _pdoData[_pdoField] = 0
+        try:
+            _pdoData['gt_PieceProductionTimeStart'] = datetime.strptime(_pieceData['start_time'], '%Y-%m-%d %H:%M:%S.%f')
+        except Exception as e:
+            print(log_time(), f'<ERR> Error in getting start_time, msg: {e}')
+            _pdoData['gt_PieceProductionTimeStart'] = datetime.now()
+        
+        # copy pdi data
+        print(log_time(), f'<INFO> copy pdi data')
+        f_PieceWeightCalc = float(_pdiData['f_SlabWt']) * 0.98
+        gt_PieceProductionTime = datetime.now()
 
         # write all data to pdo table
         newPDO = PDO(
@@ -231,10 +248,11 @@ class TICSEvtMgrFunc:
                 if _dict_count > 2:
                     print(log_time(), f'<INFO> Clearing Dictionary having key: {_dict_count} deleting pieceID: {_oldest_key}')
                     self._Datadict.pop(_oldest_key, None)
+                else:
                     break
             #print(log_time(), f'<INFO> Clear piece data dictionary')
         except Exception as e:
-            print(e)
+            print(log_time(), f'<ERR> Error in clear_dict: {e}')
 
     def update_dict(self,_pieceID, _tag, _func):
         if _func=='evt_extract_req':
